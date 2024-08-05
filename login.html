@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login page</title>
+  <script type="text/javascript" src="./form_field_validations.js"></script>
+  <script type="text/javascript" src="./validate_login.js"></script>
+</head>
+<body>
+<h2>Login</h2>
+<form action='\login' method='post' enctype="multipart/form-data" id="login_form">
+  <label for="username">Username *</label><br>
+  <input type="text" id="username" name="username" onfocus="clear_error(['username_error','submit_error'])" onfocusout="validate_username(this.value)"><br>
+  <div id='username_error'></div>
+
+  <label for="password">Password</label><br>
+  <input type="password" id="password" name="password" onfocus="clear_error(['psw_error','submit_error'])" onfocusout="validate_psw(this.value)">
+  <div id='psw_error'></div>
+  
+  <!--<input type="button" onclick="validate_user()"><br>-->
+  <input type="button" onclick="validate_user()" onmouseover="this.focus()" onmouseleave="this.blur()" value="Submit"><br>
+  <div id='submit_error'></div>
+</form>
+</body>
+</html> 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Signup page</title>
+  <script type="text/javascript" src="./form_field_validations.js"></script>
+</head>
+<body>
+  <h1>Sign Up</h1>
+  <form action='\signup' method='post' enctype="multipart/form-data" onsubmit="return validateSignupForm()">
+    <label for="firstname"><b>First Name *</b></label>
+    <input type="text" placeholder="Enter First Name" id="firstname" name="firstname" onfocus="clear_error(['firstname_error','submit_error'])" onfocusout="validate_firstname(this.value)"><br>
+    <div id='firstname_error'></div>
+
+    <label for="middlename"><b>Middle Name</b></label>
+    <input type="text" placeholder="Enter Middile Name" name="middlename"><br>
+
+    <label for="lastname"><b>Last Name</b></label>
+    <input type="text" placeholder="Enter Last Name" name="lastname"><br>
+
+    <label for="username"><b>Username *</b></label>
+    <input type="text" placeholder="Enter Username" id="username" name="username" onfocus="clear_error(['username_error','submit_error'])" onfocusout="validate_username(this.value)">
+    <div id='username_error'></div>
+
+    <label for="email"><b>Email</b></label>
+    <input type="email" placeholder="Enter Email" id="email" name="email" onfocus="clear_error(['submit_error'])"><br>
+
+    <label for="phone"><b>Phone</b></label>
+    <input type="text" placeholder="Enter Phone Number" id="phone" name="phone" onfocus="clear_error(['submit_error'])"><br>
+    
+    <label for="psw"><b>Password *</b></label>
+    <input type="password" placeholder="Enter Password" id="psw" name="psw" onfocus="clear_error(['psw_error','repsw_error','submit_error'])" onfocusout="validate_psw(this.value)"><br>
+    <div id='psw_error'></div>
+
+    <label for="psw-repeat"><b>Re-enter Password *</b></labe>
+    <input type="password" placeholder="Re-enter Password" id="repsw" onfocus="clear_error(['repsw_error','submit_error'])" onfocusout="match_psw(this.value)"><br>
+    <div id='repsw_error'></div>
+
+    <button type="reset" onmouseover="this.focus()" onclick="clear_error(['firstname_error','username_error','psw_error','repsw_error','submit_error'])" onmouseleave="blur()">Reset</button><br>
+    <button type="submit" onmouseover="this.focus()" onmouseleave="blur()">Sign Up</button><br>
+    <div id='submit_error'></div>
+</form>
+</body>
+</html>
