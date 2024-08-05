@@ -8,7 +8,7 @@ async function getData() {
     return false ;
 
   let params = '?username=' + username + '&password=' + password ;
-  let apiLink = currentURL.origin + '/login/data' + params ;
+  let apiLink = currentURL.origin + '/login/data/params' + params ;
 
   try {
     const response = await fetch(apiLink);
@@ -17,20 +17,21 @@ async function getData() {
     }
 
     const json = await response.json();
-    return json.flag ;
+    return json ;
   } catch (error) {
     console.log(error.message) ;
-    return false ;
+    return { flag:false} ;
   }
 }
 
 function validate_user() {
   if (validateLoginForm()) {
     getData().then( (result) => {
-      if (!result)
+      if (!result.flag)
         document.getElementById('submit_error').innerHTML = 'Failed' ;
       else {
-        console.log("Yeah") ;
+        document.getElementById('customer_id').value = result.custId ;
+        document.getElementById('is_active').value = result.isActive ;
         document.getElementById('login_form').submit() ;
       }
     }) ;

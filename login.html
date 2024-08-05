@@ -16,6 +16,9 @@
   <input type="password" id="password" name="password" onfocus="clear_error(['psw_error','submit_error'])" onfocusout="validate_psw(this.value)">
   <div id='psw_error'></div>
   
+  <input id="customer_id" name="customer_id" style="display:none">
+  <input id="is_active" name="is_active" style="display:none">
+
   <!--<input type="button" onclick="validate_user()"><br>-->
   <input type="button" onclick="validate_user()" onmouseover="this.focus()" onmouseleave="this.blur()" value="Submit"><br>
   <div id='submit_error'></div>

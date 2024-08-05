@@ -36,48 +36,69 @@ app.get('/login', (req, res) => {
 
 //login post api
 app.post('/login', async(req, res) => {
+  const data = {
+    username : req.body.username,
+    password : req.body.password,
+    custId : req.body.customer_id,
+    isActive : req.body.is_active
+  } ;
   try {
-    const credentials = {
-      username : req.body.username,
-      password : req.body.password
-    } ;
-    let data = db.selectQuery(pool, '*', 'login_credentials', 'username = ?', [credentials.username]) ;
-    data.then( (result) => {
-      if (typeof result[0] === 'undefined') 
-        res.send('Invalid user') ;
-      else if (credentials.password == result[0].password) {
-        res.redirect('http://localhost:8080/home?username='+credentials.username+'&sessionid=1234') ;
-      }
-      else
-        res.send('Wrong password') ; 
-    } ) ;
+    console.log(data.custId) ;
+    console.log(data.isActive) ;
+    res.redirect('http://localhost:8080/home?username='+data.username+'&sessionid=1234') ;
   } catch (err) {
       console.log(err.message) ;
+      res.send('Error') ;
   }
 }) ;
 
-app.get('/login/data', async(req, res) => {
-  try {
-    const sent_data = {
+//login api to get data from url parameters
+app.get('/login/data/params', async(req, res) => {
+    let sent_data = {
       info : '',
       error : '',
       flag : false
     } ;
+  try {
     let api_data = url.parse(req.url, true).query ;
-    let password_data = db.selectQuery(pool, 'password', 'login_credentials', 'username = ?', [api_data.username]) ;
-    password_data.then( (result) => {
-      if (typeof result[0] === 'undefined') 
-        sent_data.error = 'Invalid username' ;
-      else if (api_data.password == result[0].password) {
-        sent_data.info = 'User validated' ; 
-        sent_data.flag = true ;
+    if (Object.keys(api_data).length == 0) {
+      sent_data.error = 'No input provided' ;
+    }
+    else if(typeof api_data.username === 'undefined' || typeof api_data.username !== 'string' || api_data.username === '') {
+      sent_data.error = 'Username input is inavlid' ;
+    }
+    else if(typeof api_data.password === 'undefined' || typeof api_data.password !== 'string' || api_data.password === '') {
+      sent_data.error = 'Password input is inavlid' ;
+    }
+    else {
+      for (let key of Object.keys(api_data)) {
+        if (key === 'username' || key === 'password')
+          continue ;
+        sent_data.error = 'Extra parameters are passed' ;
       }
-      else
-        sent_data.info = 'Wrong Password' ;
+    }
+    if (sent_data.error == '') {
+      let password_data = db.selectQuery(pool, '*', 'login_credentials', 'username = ?', [api_data.username]) ;
+      password_data.then( (result) => {
+        if (typeof result[0] === 'undefined') 
+          sent_data.error = 'Invalid username' ;
+        else if (api_data.password == result[0].password) {
+          sent_data.info = 'User validated' ; 
+          sent_data.flag = true ;
+          sent_data.custId = result[0].customer_id ;
+          sent_data.isActive = result[0].active_username ;
+        }
+        else
+          sent_data.info = 'Wrong Password' ;
+        res.send(sent_data) ;
+      } ) ;
+    }
+    else
       res.send(sent_data) ;
-    } ) ;
   } catch (err) {
+      sent_data.error = err.message ;
       console.log(err.message) ;
+      res.send(sent_data) ;
   }
 }) ;
 
