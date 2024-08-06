@@ -1,7 +1,8 @@
 // Define the API URL
 
 let currentURL = new URL(window.location.href) ;
-let apiLink = currentURL.origin + '/data' + currentURL.search ;
+let custId = currentURL.pathname.slice(currentURL.pathname.lastIndexOf('/')) ;
+let apiLink = currentURL.origin + '/data/customer' + custId ;
 
 // Make a GET request
 fetch(apiLink)
@@ -12,8 +13,8 @@ fetch(apiLink)
     return response.json();
   })
   .then(data => {
-    if (data.error == '')
-      document.getElementById('customer_name').innerHTML = data.name ;
+    if (data.flag)
+      document.getElementById('customer_name').innerHTML = data.firstname ;
     else
       document.getElementById('customer_name').innerHTML = data.error ;
   })

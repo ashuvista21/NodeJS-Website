@@ -43,9 +43,10 @@ app.post('/login', async(req, res) => {
     isActive : req.body.is_active
   } ;
   try {
-    console.log(data.custId) ;
-    console.log(data.isActive) ;
-    res.redirect('http://localhost:8080/home?username='+data.username+'&sessionid=1234') ;
+    if (data.isActive == 'Y')
+      res.redirect('http://localhost:8080/home/' + data.custId) ;
+    else
+      res.send('Username is disabled') ;
   } catch (err) {
       console.log(err.message) ;
       res.send('Error') ;
@@ -180,7 +181,8 @@ app.post('/signup', async(req, res) => {
 app.get(/.js$/, (req, res) => {
   try {
     var parseURL = url.parse(req.url, true) ;
-    var filename = "." + parseURL.pathname ;
+    //var filename = '.' + parseURL.pathname.slice(parseURL.pathname.lastIndexOf('/')) ;
+    var filename = '.' + parseURL.pathname ;
     fs.readFile(filename, function(err, data) {
       if (err) {
         res.writeHead(404, {'Content-Type': 'text/html'});
@@ -196,10 +198,10 @@ app.get(/.js$/, (req, res) => {
 }) ;
 
 //home get api
-app.get('/home', (req, res) => {
+app.get('/home/:id', (req, res) => {
   try {
-    var parseURL = url.parse(req.url, true);
-    var filename = "." + parseURL.pathname + '.html' ;
+    var parseURL = url.parse(req.url, true) ;
+    var filename = "./" + parseURL.pathname.split('/')[1] + '.html' ;
     fs.readFile(filename, function(err, data) {
       if (err) {
         res.writeHead(404, {'Content-Type': 'text/html'}) ;
@@ -215,33 +217,35 @@ app.get('/home', (req, res) => {
 }) ;
 
 //data get api
-app.get('/data', (req, res) => {
-  try {
-    const sent_data = {
-      name : '',
-      error : ''
+app.get('/data/customer/:id', (req, res) => {
+  let sent_data = {
+      info : '',
+      error : '',
+      flag : false
     } ;
-    let api_data = url.parse(req.url, true).query ;
-    let cust_id_data = db.selectQuery(pool, 'customer_id', 'login_credentials', 'username = ?', [api_data.username]) ;
-    cust_id_data.then( (result_of_select_login) => {
-      if (typeof result_of_select_login[0] === 'undefined') {
-        sent_data.error = 'Not able to fetch customer_id' ;
+  try {
+    let custId = req.params.id ;
+    if (typeof custId === 'undefined' || custId === '') {
+      sent_data.error = 'No customer_id provided' ;
+      res.send(sent_data) ;
+    }
+    else {
+      let firstname_data = db.selectQuery(pool, 'first_name', 'customers_details', 'customer_id = ?', [custId]) ;
+      firstname_data.then( (result_of_select_customer_firstname) => {
+        if (typeof result_of_select_customer_firstname[0] == 'undefined')
+          sent_data.error = 'Not able to find customer' ;
+        else {
+          sent_data.firstname = result_of_select_customer_firstname[0].first_name ;
+          sent_data.info = 'Customer found' ;
+          sent_data.flag = true ;
+        }
         res.send(sent_data) ;
-      }
-      else {
-        let cus_id = result_of_select_login[0].customer_id ;
-        let firstname_data = db.selectQuery(pool, 'first_name', 'customers_details', 'customer_id = ?', [cus_id]) ;
-        firstname_data.then( (result_of_select_customer_firstname) => {
-          if (typeof result_of_select_customer_firstname[0] == 'undefined')
-            sent_data.error = 'Not able to fetch firstname' ;
-          else
-            sent_data.name = result_of_select_customer_firstname[0].first_name ;
-          res.send(sent_data) ;
-        }) ;
-      }
-    }) ;
+      }) ;
+    }
   } catch (err) {
       console.log(err.message) ;
+      sent_data.error = err.message ;
+      res.send(sent_data) ;
   }
 }) ;
 
