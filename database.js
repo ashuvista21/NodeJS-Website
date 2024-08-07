@@ -13,9 +13,10 @@ app.use(express.urlencoded({extended:true})) ;
 app.use(express.json()) ;
 app.use(upload.array()) ;
 
-const pool = db.dbParams(mariadb, 'localhost', 'root', '123456', 'customers_info') ;
+const poolForCustomerInfoDb = db.dbParams(mariadb, 'localhost', 'root', '123456', 'customers_info') ;
+const poolForLoginErrorsInfoDb = db.dbParams(mariadb, 'localhost', 'root', '123456', 'errors_info') ;
 
-//login get api
+//login get api to load login page
 app.get('/login', (req, res) => {
   try {
     var parseURL = url.parse(req.url, true);
@@ -34,7 +35,7 @@ app.get('/login', (req, res) => {
   }
 }) ;
 
-//login post api
+//login post api to redirct from login page
 app.post('/login', async(req, res) => {
   const data = {
     username : req.body.username,
@@ -45,8 +46,10 @@ app.post('/login', async(req, res) => {
   try {
     if (data.isActive == 'Y')
       res.redirect('http://localhost:8080/home/' + data.custId) ;
-    else
-      res.send('Username is disabled') ;
+    else {
+      let errorCode = 'LOGIN_ERR_0001' ;
+      res.redirect('http://localhost:8080/error/' + errorCode) ;
+    }
   } catch (err) {
       console.log(err.message) ;
       res.send('Error') ;
@@ -55,11 +58,11 @@ app.post('/login', async(req, res) => {
 
 //login api to get data from url parameters
 app.get('/login/data/params', async(req, res) => {
-    let sent_data = {
-      info : '',
-      error : '',
-      flag : false
-    } ;
+  let sent_data = {
+    info : '',
+    error : '',
+    flag : false
+  } ;
   try {
     let api_data = url.parse(req.url, true).query ;
     if (Object.keys(api_data).length == 0) {
@@ -79,7 +82,7 @@ app.get('/login/data/params', async(req, res) => {
       }
     }
     if (sent_data.error == '') {
-      let password_data = db.selectQuery(pool, '*', 'login_credentials', 'username = ?', [api_data.username]) ;
+      let password_data = db.selectQuery(poolForCustomerInfoDb, '*', 'login_credentials', 'username = ?', [api_data.username]) ;
       password_data.then( (result) => {
         if (typeof result[0] === 'undefined') 
           sent_data.error = 'Invalid username' ;
@@ -134,11 +137,11 @@ app.post('/signup', async(req, res) => {
       phone : req.body.phone,
       password : req.body.psw
     } ;
-    let data = db.insertQuery(pool, 'username, password', 'login_credentials', '(?, ?)', [user_details.username, user_details.password]) ;
+    let data = db.insertQuery(poolForCustomerInfoDb, 'username, password', 'login_credentials', '(?, ?)', [user_details.username, user_details.password]) ;
     data.then( (result_of_insert_login) => {
       let tmp = result_of_insert_login ;
       if (tmp.affectedRows == 1) {
-        let cust_id_data = db.selectQuery(pool, 'customer_id', 'login_credentials', 'username = ?', [user_details.username]) ;
+        let cust_id_data = db.selectQuery(poolForCustomerInfoDb, 'customer_id', 'login_credentials', 'username = ?', [user_details.username]) ;
         cust_id_data.then ( (result_of_select_login) => {
           if (typeof result_of_select_login[0] == 'undefined')
             res.send('Not able to fetch customer_id') ;
@@ -158,7 +161,7 @@ app.post('/signup', async(req, res) => {
               val_arr.push(user_details.lastname) ;
             }
             val += ')' ;
-            let cus_det = db.insertQuery(pool, col_name, 'customers_details', val, val_arr) ;
+            let cus_det = db.insertQuery(poolForCustomerInfoDb, col_name, 'customers_details', val, val_arr) ;
             cus_det.then( (result_of_insert_customer) => {
               let cus_data = result_of_insert_login ;
               if (cus_data.affectedRows == 1)
@@ -197,7 +200,7 @@ app.get(/.js$/, (req, res) => {
   }
 }) ;
 
-//home get api
+//home get api to load home page
 app.get('/home/:id', (req, res) => {
   try {
     var parseURL = url.parse(req.url, true) ;
@@ -216,7 +219,7 @@ app.get('/home/:id', (req, res) => {
   }
 }) ;
 
-//data get api
+//data get api to get customer info
 app.get('/data/customer/:id', (req, res) => {
   let sent_data = {
       info : '',
@@ -230,7 +233,7 @@ app.get('/data/customer/:id', (req, res) => {
       res.send(sent_data) ;
     }
     else {
-      let firstname_data = db.selectQuery(pool, 'first_name', 'customers_details', 'customer_id = ?', [custId]) ;
+      let firstname_data = db.selectQuery(poolForCustomerInfoDb, 'first_name', 'customers_details', 'customer_id = ?', [custId]) ;
       firstname_data.then( (result_of_select_customer_firstname) => {
         if (typeof result_of_select_customer_firstname[0] == 'undefined')
           sent_data.error = 'Not able to find customer' ;
@@ -249,6 +252,57 @@ app.get('/data/customer/:id', (req, res) => {
   }
 }) ;
 
+//error get api to load error page
+app.get('/error/:id', (req, res) => {
+  try {
+    var parseURL = url.parse(req.url, true) ;
+    var filename = "./" + parseURL.pathname.split('/')[1] + '.html' ;
+    fs.readFile(filename, function(err, data) {
+      if (err) {
+        res.writeHead(404, {'Content-Type': 'text/html'}) ;
+        return res.end("404 Not Found");
+      } 
+      res.writeHead(200, {'Content-Type': 'text/html'}) ;
+      res.write(data) ;
+      return res.end();
+    }) ;
+  } catch (err) {
+      console.log(err.message) ;
+  }
+}) ;
+
+//data get api to error info
+app.get('/data/error/:id', (req, res) => {
+  let sent_data = {
+    info : '',
+    error : '',
+    flag : false
+  } ;
+  try {
+    let errCd = req.params.id ;
+    if (typeof errCd === 'undefined' || errCd.trim() === '') {
+      sent_data.error = 'No error code provided' ;
+      res.send(sent_data) ;
+    }
+    else {
+      let description = db.selectQuery(poolForLoginErrorsInfoDb, 'description', 'login_error_info', 'error_code = ?', [errCd]) ;
+      description.then( (result_of_select_error_desc) => {
+        if (typeof result_of_select_error_desc[0] == 'undefined')
+          sent_data.error = 'Not able to find error code' ;
+        else {
+          sent_data.info = result_of_select_error_desc[0].description ;
+          sent_data.flag = true ;
+        }
+        res.send(sent_data) ;
+      }) ;
+    }
+  } catch (err) {
+      console.log(err.message) ;
+      sent_data.error = err.message ;
+      res.send(sent_data) ;
+  }
+}) ;
+
 app.listen(8080, () => {
   console.log('Express server running on port 8080');
-  });
+  }) ;
