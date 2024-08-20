@@ -45,10 +45,10 @@ app.post('/login', async(req, res) => {
   } ;
   try {
     if (data.isActive == 'Y')
-      res.redirect('http://localhost:8080/home/' + data.custId) ;
+      res.redirect('http://' + req.rawHeaders[1] +'/home/' + data.custId) ;
     else {
       let errorCode = 'LOGIN_ERR_0001' ;
-      res.redirect('http://localhost:8080/error/' + errorCode) ;
+      res.redirect('http://' + req.rawHeaders[1] + '/error/' + errorCode) ;
     }
   } catch (err) {
       console.log(err.message) ;
